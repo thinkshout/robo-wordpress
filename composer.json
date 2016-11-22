@@ -1,0 +1,23 @@
+{
+    "name": "thinkshout/robo-wordpress",
+    "description": "Robo Tasks for Wordpress projects",
+    "type": "library",
+    "license": "GPL-2.0+",
+    "authors": [
+        {
+            "name": "Tauno Hogue",
+            "email": "tauno@thinkshout.com"
+        }
+    ],
+    "autoload":
+    {
+        "psr-4":
+        {
+            "ThinkShout\\RoboWordpress\\": "src"
+        }
+    },
+    "require": {
+        "vlucas/phpdotenv": "^2.2",
+        "consolidation/robo": "^1.0.0"
+    }
+}
