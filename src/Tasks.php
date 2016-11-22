@@ -1,8 +1,7 @@
 <?php
 
-namespace ThinkShout\RoboDrupal;
+namespace ThinkShout\RoboWordpress;
 
-use Drupal\Component\Utility\Crypt;
 use Symfony\Component\Process\Process;
 
 class Tasks extends \Robo\Tasks
@@ -31,13 +30,13 @@ class Tasks extends \Robo\Tasks
     $find_replaces = array(
       array(
         'source' => 'composer.json',
-        'from' => '"name": "thinkshout/drupal-project",',
+        'from' => '"name": "thinkshout/bedrock",',
         'to' => '"name": "thinkshout/' . $git_repo . '",',
       ),
       array(
         'source' => '.env.dist',
-        'from' => 'TS_PROJECT="SITE"',
-        'to' => 'TS_PROJECT="' . $git_repo . '"',
+        'from' => 'PROJECT="SITE"',
+        'to' => 'PROJECT="' . $git_repo . '"',
       ),
       array(
         'source' => 'README.md',
@@ -64,7 +63,6 @@ class Tasks extends \Robo\Tasks
    * @option string db-name Database name.
    * @option string db-host Database host.
    * @option string branch Branch.
-   * @option string profile install profile.
    */
   function configure($opts = [
     'db-pass' => NULL,
@@ -72,15 +70,9 @@ class Tasks extends \Robo\Tasks
     'db-name' => NULL,
     'db-host' => NULL,
     'branch' => NULL,
-    'profile' => 'standard',
   ]) {
 
     $settings = $this->getDefaultPressflowSettings();
-
-    // Use user environment settings if we have them.
-    if ($system_defaults = getenv('DEFAULT_PRESSFLOW_SETTINGS')) {
-      $settings = json_decode($system_defaults, TRUE);
-    }
 
     // Loop through project properties and replace with command line arguments
     // if we have them.
@@ -112,23 +104,6 @@ class Tasks extends \Robo\Tasks
       $settings['databases']['default']['default']['host'] = $this->projectProperties['db-host'];
     }
 
-    // Hash Salt.
-    if (empty($this->projectProperties['hash_salt'])) {
-
-      // If we don't have a salt, we generate one.
-      $hash_salt = Crypt::randomBytesBase64(55);
-      $this->projectProperties['hash_salt'] = $hash_salt;
-      $this->taskWriteToFile('.env.dist')
-        ->append()
-        ->line('TS_HASH_SALT="' . $hash_salt . '"')
-        ->run();
-    }
-
-    $settings['drupal_hash_salt'] = $this->projectProperties['hash_salt'];
-
-    // Config Directory
-    $settings['config_directory_name'] = $this->projectProperties['config_dir'];
-
     // Branch
     $branch = $this->projectProperties['branch'];
 
@@ -151,13 +126,7 @@ class Tasks extends \Robo\Tasks
     // If branch was specified, write it out to the .env file for future runs.
     $this->taskWriteToFile('.env')
       ->append()
-      ->line('TS_BRANCH=' . $branch)
-      ->run();
-
-    // If profile was specified, write it out to the .env file for future runs.
-    $result = $this->taskWriteToFile('.env')
-      ->append()
-      ->line('TS_INSTALL_PROFILE=' . $this->projectProperties['profile'])
+      ->line('BRANCH=' . $branch)
       ->run();
 
     return $result;
@@ -434,24 +403,24 @@ EOF';
 
   protected function getProjectProperties() {
 
-    $properties = ['project' => '', 'hash_salt' => '', 'config_dir' => '', 'host_repo' => '', 'install_profile' => 'standard'];
+    $properties = ['project' => '', 'host_repo' => ''];
 
     $properties['working_dir'] = getcwd();
 
     // Load .env file from the local directory if it exists. Or use the .env.dist
-    $env_file = (file_exists($properties['working_dir'] . '/.env')) ? '.env' : '.env.dist';
+    $env_file = (file_exists($properties['working_dir'] . '/.env')) ? '.env' : '.env.example';
 
     $dotenv = new \Dotenv\Dotenv($properties['working_dir'], $env_file);
     $dotenv->load();
 
     array_walk($properties, function(&$var, $key) {
-      $env_var = strtoupper('TS_' . $key);
+      $env_var = strtoupper($key);
       if ($value = getenv($env_var)) {
         $var = $value;
       }
     });
 
-    if ($web_root = getenv('TS_WEB_ROOT')) {
+    if ($web_root = getenv('WEB_ROOT')) {
       $properties['web_root'] = $properties['working_dir'] . '/' . $web_root;
     }
     else {
@@ -473,7 +442,7 @@ EOF';
       $properties['branch'] = trim($branch);
     }
 
-    if ($db_name = getenv('TS_DB_NAME')) {
+    if ($db_name = getenv('DB_NAME')) {
       $properties['db-name'] = $db_name;
     }
     else {
@@ -508,7 +477,7 @@ EOF';
    * @return string
    */
   protected function getTmpDir() {
-    return realpath(sys_get_temp_dir()) . DIRECTORY_SEPARATOR . 'drupal-deploy-' . time();
+    return realpath(sys_get_temp_dir()) . DIRECTORY_SEPARATOR . 'wp-deploy-' . time();
   }
 
   /**
@@ -520,54 +489,6 @@ EOF';
    */
   protected function getFetchDirName() {
     return 'host';
-  }
-
-  /**
-   * Return the default array of pressflow settings.
-   * @return array
-   */
-  protected function getDefaultPressflowSettings() {
-    return array (
-      'databases' =>
-        array (
-          'default' =>
-            array (
-              'default' =>
-                array (
-                  'driver' => 'mysql',
-                  'prefix' => '',
-                  'database' => '',
-                  'username' => 'root',
-                  'password' => 'root',
-                  'host' => '127.0.0.1',
-                  'port' => 3306,
-                ),
-            ),
-        ),
-      'conf' =>
-        array (
-          'pressflow_smart_start' => true,
-          'pantheon_binding' => NULL,
-          'pantheon_site_uuid' => NULL,
-          'pantheon_environment' => 'local',
-          'pantheon_tier' => 'local',
-          'pantheon_index_host' => 'localhost',
-          'pantheon_index_port' => 8983,
-          'redis_client_host' => '',
-          'redis_client_port' => 6379,
-          'redis_client_password' => '',
-          'file_public_path' => 'sites/default/files',
-          'file_private_path' => 'sites/default/files/private',
-          'file_directory_path' => 'site/default/files',
-          'file_temporary_path' => '/tmp',
-          'file_directory_temp' => '/tmp',
-          'css_gzip_compression' => false,
-          'js_gzip_compression' => false,
-          'page_compression' => false,
-        ),
-      'hash_salt' => '',
-      'config_directory_name' => '../config',
-    );
   }
 
   /**
