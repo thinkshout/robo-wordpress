@@ -34,9 +34,14 @@ class Tasks extends \Robo\Tasks
         'to' => '"name": "thinkshout/' . $git_repo . '",',
       ),
       array(
-        'source' => '.env.dist',
+        'source' => '.env.example',
         'from' => 'PROJECT="SITE"',
         'to' => 'PROJECT="' . $git_repo . '"',
+      ),
+      array(
+        'source' => '.env.example',
+        'from' => 'WP_HOME=http://example.com',
+        'to' => 'WP_HOME=http://' . $git_repo . '',
       ),
       array(
         'source' => 'README.md',
@@ -58,50 +63,45 @@ class Tasks extends \Robo\Tasks
    *
    * @arg array opts function options:
    *
-   * @option string db-pass Database password.
+   * @option string db-password Database password.
    * @option string db-user Database user.
    * @option string db-name Database name.
    * @option string db-host Database host.
    * @option string branch Branch.
+   * @option string wp-home Base URL for the Wordpress site.
    */
   function configure($opts = [
-    'db-pass' => NULL,
+    'db-password' => NULL,
     'db-user' => NULL,
     'db-name' => NULL,
     'db-host' => NULL,
     'branch' => NULL,
+    'wp-home' => NULL,
   ]) {
 
-    $settings = $this->getDefaultPressflowSettings();
+    $allowed_opts = ['db-password', 'db-user', 'db-name', 'db-host', 'branch', 'wp-home'];
+
+    // Initialize the .env file
+    $this->taskExec('wp dotenv init')
+      ->option('with-salts')
+      ->option('template=.env.example')
+      ->option('force')
+      ->run();
 
     // Loop through project properties and replace with command line arguments
     // if we have them.
-    foreach ($opts as $opt => $value) {
-      if ($value !== NULL) {
+    foreach ($allowed_opts as $opt) {
+      if ($opts[$opt] !== NULL) {
         // Ugly method to allow an empty param to be passed for the password.
-        if ($value == 'NULL') {
-          $value = '';
+        if ($opts[$opt] == 'NULL') {
+          $opts[$opt] = '';
         }
-        $this->projectProperties[$opt] = $value;
+        $this->say("Test: ". strtoupper(str_replace('-', '_', $opt)));
+        $this->projectProperties[$opt] = $opts[$opt];
+        $this->taskExec('wp dotenv set')
+          ->args([strtoupper(str_replace('-', '_', $opt)), $opts[$opt]])
+          ->run();
       }
-    }
-
-    // DB Name
-    $settings['databases']['default']['default']['database'] = $this->projectProperties['db-name'];
-
-    // Override DB username from project properties.
-    if (isset($this->projectProperties['db-user'])) {
-      $settings['databases']['default']['default']['username'] = $this->projectProperties['db-user'];
-    }
-
-    // Override DB password from project properties.
-    if (isset($this->projectProperties['db-pass'])) {
-      $settings['databases']['default']['default']['password'] = $this->projectProperties['db-pass'];
-    }
-
-    // Override DB host from project properties.
-    if (isset($this->projectProperties['db-host'])) {
-      $settings['databases']['default']['default']['host'] = $this->projectProperties['db-host'];
     }
 
     // Branch
@@ -109,27 +109,14 @@ class Tasks extends \Robo\Tasks
 
     // Terminus env
     $this->projectProperties['terminus_env'] = ($branch == 'master') ? 'dev' : $branch;
-
-    $json_settings = json_encode($settings);
-
-    // Start with the dist env file.
-    $this->_remove('.env');
-    $this->_copy('.env.dist', '.env');
-
-    $this->taskWriteToFile('.env')
-      ->append()
-      ->line('# Generated configuration')
-      ->line('PRESSFLOW_SETTINGS=' . $json_settings)
-      ->line('TERMINUS_ENV=' . $this->projectProperties['terminus_env'])
+    $this->taskExec('wp dotenv set')
+      ->args(['TERMINUS_ENV', $this->projectProperties['terminus_env']])
       ->run();
 
     // If branch was specified, write it out to the .env file for future runs.
-    $this->taskWriteToFile('.env')
-      ->append()
-      ->line('BRANCH=' . $branch)
+    $this->taskExec('wp dotenv set')
+      ->args(['BRANCH',  $branch])
       ->run();
-
-    return $result;
   }
 
   /**
