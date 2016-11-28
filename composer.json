@@ -17,6 +17,7 @@
         }
     },
     "require": {
+        "aaemnnosttv/wp-cli-dotenv-command": "^1.0",
         "vlucas/phpdotenv": "^2.2",
         "consolidation/robo": "^1.0.0"
     }
