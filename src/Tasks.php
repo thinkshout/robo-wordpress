@@ -40,8 +40,8 @@ class Tasks extends \Robo\Tasks
       ),
       array(
         'source' => '.env.example',
-        'from' => 'WP_HOME=http://example.com',
-        'to' => 'WP_HOME=http://' . $git_repo . '',
+        'from' => 'URL=http://example.com',
+        'to' => 'URL=http://' . $git_repo . '',
       ),
       array(
         'source' => 'README.md',
@@ -68,7 +68,7 @@ class Tasks extends \Robo\Tasks
    * @option string db-name Database name.
    * @option string db-host Database host.
    * @option string branch Branch.
-   * @option string wp-home Base URL for the Wordpress site.
+   * @option string url Base URL for the Wordpress site.
    */
   function configure($opts = [
     'db-password' => NULL,
@@ -76,10 +76,10 @@ class Tasks extends \Robo\Tasks
     'db-name' => NULL,
     'db-host' => NULL,
     'branch' => NULL,
-    'wp-home' => NULL,
+    'url' => NULL,
   ]) {
 
-    $allowed_opts = ['db-password', 'db-user', 'db-name', 'db-host', 'branch', 'wp-home'];
+    $allowed_opts = ['db-password', 'db-user', 'db-name', 'db-host', 'branch', 'url'];
 
     // Initialize the .env file
     $this->taskExec('wp dotenv init')
@@ -203,37 +203,31 @@ class Tasks extends \Robo\Tasks
    * @return \Robo\Result
    */
   function install() {
-    // Use user environment settings if we have them.
-    if ($system_defaults = getenv('PRESSFLOW_SETTINGS')) {
-      $settings = json_decode($system_defaults, TRUE);
-      $db_settings = $settings['databases']['default']['default'];
-      $install_cmd = 'site-install ' . $this->projectProperties['install_profile'] .
-        ' --db-url=mysql://' . $db_settings['username'] .
-        ':' . $db_settings['password'] .
-        '@' . $db_settings['host'] .
-        ':' . $db_settings['port'] .
-        '/' . $db_settings['database'] .
-        ' -y';
-    }
-    else {
-      $install_cmd = 'site-install standard -y';
-    }
 
     // Install dependencies. Only works locally.
     $this->taskComposerInstall()
       ->optimizeAutoloader()
       ->run();
 
-    $this->_chmod($this->projectProperties['web_root'] . '/sites/default/settings.php', 0755);
-    $install_cmd = 'drush ' . $install_cmd;
+    // Wipe the DB.
+    $this->_exec('wp db reset --yes');
+
+    $password = bin2hex(random_bytes(10));
 
     // Run the installation.
-    $result = $this->taskExec($install_cmd)
-      ->dir($this->projectProperties['web_root'])
+    $result = $this->taskExec('wp core install')
+      ->option('url="' . $this->projectProperties['url'] . '"')
+      ->option('title="' . $this->projectProperties['project'] . '"')
+      ->option('admin_user="' . $this->projectProperties['project'] . '_admin"')
+      ->option('admin_password="' . $password . '"')
+      ->option('admin_email="dev-team+' . $this->projectProperties['project'] . '@thinkshout.com"')
+      ->option('skip-email')
       ->run();
 
     if ($result->wasSuccessful()) {
       $this->say('Install complete');
+      $this->say('Admin: ' . $this->projectProperties['project'] . '_admin');
+      $this->say('Password: ' . $password);
     }
 
     return $result;
@@ -390,7 +384,7 @@ EOF';
 
   protected function getProjectProperties() {
 
-    $properties = ['project' => '', 'host_repo' => ''];
+    $properties = ['project' => '', 'host_repo' => '', 'url' => ''];
 
     $properties['working_dir'] = getcwd();
 
