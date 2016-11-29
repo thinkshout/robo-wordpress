@@ -331,7 +331,7 @@ class Tasks extends \Robo\Tasks
   function pantheonInstall() {
 
     // Get the current branch using the simple exec command.
-    $command = 'terminus site hostnames list | awk \'{if (NR!=1) print "http://" $1}\'';
+    $command = 'terminus site hostnames list | awk \'{if (NR!=1) print $1}\'';
     $process = new Process($command);
     $process->setTimeout(NULL);
 //    $process->setWorkingDirectory($properties['working_dir']);
