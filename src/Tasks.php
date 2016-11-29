@@ -167,8 +167,6 @@ class Tasks extends \Robo\Tasks
       ->args('-a', '-v', '-z', '--no-group', '--no-owner')
       ->excludeVcs()
       ->exclude('.gitignore')
-      ->exclude('sites/default/settings.local.php')
-      ->exclude('sites/default/files')
       ->printed(FALSE)
       ->run();
 
@@ -330,27 +328,33 @@ class Tasks extends \Robo\Tasks
    * @return \Robo\Result
    */
   function pantheonInstall() {
-      $install_cmd = 'site-install ' . $this->projectProperties['install_profile'] . ' -y';
 
-    $install_cmd = 'terminus drush "' . $install_cmd . '"';
-    // Pantheon wants the site in SFTP for installs.
-    $this->_exec('terminus site set-connection-mode --mode=sftp');
-
-    // Even in SFTP mode, the settings.php file might have too restrictive
-    // permissions. We use SFTP to chmod the settings file before installing.
-    $sftp_command = trim($this->_exec('terminus site connection-info --field=sftp_command')->getMessage());
-    $sftp_command = str_replace('sftp', 'sftp -b -', $sftp_command);
-    $sftp_command .= ' << EOF
-chmod 644 code/sites/default/settings.php
-EOF';
-    $this->_exec($sftp_command);
-
-    // Run the installation.
-    $result = $this->taskExec($install_cmd)
+    // Wipe the existing site.
+    $this->taskExec('terminus site wipe')
+      ->option('yes')
       ->run();
 
-    // Put the site back into git mode.
-    $this->_exec('terminus site set-connection-mode --mode=git');
+    // Generate a "random" password.
+    $password = bin2hex(random_bytes(10));
+
+    // @TODO use the correct URL for the environment as provided by terminus.
+    $install_cmd = 'terminus wp \'core install --url="' . $this->projectProperties['url'] . '"' .
+                   ' --title="' . $this->projectProperties['project'] . '"' .
+                   ' --admin_user="' . $this->projectProperties['project'] . '_admin"' .
+                   ' --admin_user="' . $this->projectProperties['project'] . '_admin"' .
+                   ' --admin_password="' . $password . '"' .
+                   ' --admin_email="dev-team+' . $this->projectProperties['project'] . '@thinkshout.com"' .
+                   ' --skip-email' .
+                   '\'';
+    // Run the installation.
+    $result = $this->taskExec($install_cmd)
+                   ->run();
+
+    if ($result->wasSuccessful()) {
+      $this->say('Install complete');
+      $this->say('Admin: ' . $this->projectProperties['project'] . '_admin');
+      $this->say('Password: ' . $password);
+    }
 
     if ($result->wasSuccessful()) {
       $this->say('Install complete');
@@ -384,7 +388,7 @@ EOF';
 
   protected function getProjectProperties() {
 
-    $properties = ['project' => '', 'host_repo' => '', 'url' => ''];
+    $properties = ['project' => '', 'host_repo' => '', 'url' => '', 'terminus_env' => ''];
 
     $properties['working_dir'] = getcwd();
 
