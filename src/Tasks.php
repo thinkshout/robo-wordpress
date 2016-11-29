@@ -167,6 +167,7 @@ class Tasks extends \Robo\Tasks
       ->args('-a', '-v', '-z', '--no-group', '--no-owner')
       ->excludeVcs()
       ->exclude('.gitignore')
+      ->exclude('.env')
       ->printed(FALSE)
       ->run();
 
