@@ -330,6 +330,15 @@ class Tasks extends \Robo\Tasks
    */
   function pantheonInstall() {
 
+    // Get the current branch using the simple exec command.
+    $command = 'terminus site hostnames list | awk \'{if (NR!=1) print "http://" $1}\'';
+    $process = new Process($command);
+    $process->setTimeout(NULL);
+//    $process->setWorkingDirectory($properties['working_dir']);
+    $process->run();
+
+    $url = trim($process->getOutput());
+
     // Wipe the existing site.
     $this->taskExec('terminus site wipe')
       ->option('yes')
@@ -339,7 +348,7 @@ class Tasks extends \Robo\Tasks
     $password = bin2hex(random_bytes(10));
 
     // @TODO use the correct URL for the environment as provided by terminus.
-    $install_cmd = 'terminus wp \'core install --url="' . $this->projectProperties['url'] . '"' .
+    $install_cmd = 'terminus wp \'core install --url="' . $url . '"' .
                    ' --title="' . $this->projectProperties['project'] . '"' .
                    ' --admin_user="' . $this->projectProperties['project'] . '_admin"' .
                    ' --admin_user="' . $this->projectProperties['project'] . '_admin"' .
