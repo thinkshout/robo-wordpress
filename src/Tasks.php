@@ -224,6 +224,7 @@ class Tasks extends \Robo\Tasks
       ->run();
 
     if ($result->wasSuccessful()) {
+      $this->taskExec('wp config pull all')->run();
       $this->say('Install complete');
       $this->say('Admin: ' . $this->projectProperties['project'] . '_admin');
       $this->say('Password: ' . $password);
@@ -347,7 +348,6 @@ class Tasks extends \Robo\Tasks
     // Generate a "random" password.
     $password = bin2hex(random_bytes(10));
 
-    // @TODO use the correct URL for the environment as provided by terminus.
     $install_cmd = 'terminus wp \'core install --url="' . $url . '"' .
                    ' --title="' . $this->projectProperties['project'] . '"' .
                    ' --admin_user="' . $this->projectProperties['project'] . '_admin"' .
@@ -361,6 +361,7 @@ class Tasks extends \Robo\Tasks
                    ->run();
 
     if ($result->wasSuccessful()) {
+      $this->taskExec('terminus wp \'config pull all\'')->run();
       $this->say('Install complete');
       $this->say('Admin: ' . $this->projectProperties['project'] . '_admin');
       $this->say('Password: ' . $password);
