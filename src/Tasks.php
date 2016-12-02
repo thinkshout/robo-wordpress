@@ -168,6 +168,7 @@ class Tasks extends \Robo\Tasks
       ->excludeVcs()
       ->exclude('.gitignore')
       ->exclude('.env')
+      ->exclude('docker-runtime')
       ->printed(FALSE)
       ->run();
 
