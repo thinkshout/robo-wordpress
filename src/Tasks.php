@@ -203,7 +203,6 @@ class Tasks extends \Robo\Tasks
    * @arg array opts function options:
    *
    * @option array plugins Plugins to enable before config is imported.
-
    *
    * @return \Robo\Result
    */
@@ -336,9 +335,13 @@ class Tasks extends \Robo\Tasks
   /**
    * Install site on Pantheon.
    *
+   * @arg array opts function options:
+   *
+   * @option array plugins Plugins to enable before config is imported.
+   *
    * @return \Robo\Result
    */
-  function pantheonInstall() {
+  function pantheonInstall($opts = ['plugins' => NULL]) {
 
     // Get the current branch using the simple exec command.
     $command = 'terminus site hostnames list | awk \'{if (NR!=1) print $1}\'';
@@ -370,6 +373,9 @@ class Tasks extends \Robo\Tasks
                    ->run();
 
     if ($result->wasSuccessful()) {
+      if ($opts['plugins']) {
+        $this->taskExec( 'terminus wp \'plugin activate ' . implode(' ', $opts['plugins']) . '\'' )->run();
+      }
       $this->taskExec('terminus wp \'config pull all\'')->run();
       $this->say('Install complete');
       $this->say('Admin: ' . $this->projectProperties['project'] . '_admin');
