@@ -303,7 +303,7 @@ class Tasks extends \Robo\Tasks
    */
   function pantheonDeploy($opts = ['install' => FALSE, 'y' => FALSE]) {
     $terminus_env = $this->projectProperties['terminus_env'];
-    $result = $this->taskExec('terminus site environment-info')->run();
+    $result = $this->terminus('env:info');
 
     // Check for existing multidev and prompt to create.
     if (!$result->wasSuccessful()) {
@@ -312,22 +312,23 @@ class Tasks extends \Robo\Tasks
           return FALSE;
         }
       }
-      $this->taskExec("terminus site create-env --to-env=$terminus_env --from-env=dev")
+      // Unique pattern so we don't use the terminus task helper.
+      $this->taskExec('terminus multidev:create ' . $this->projectProperties['terminus_site'] . '.dev ' . $terminus_env)
         ->run();
     }
 
     // Make sure our site is awake.
-    $this->_exec('terminus site wake');
+    $this->terminus('env:wake');
 
     // Ensure we're in git mode.
-    $this->_exec('terminus site set-connection-mode --mode=git');
+    $this->terminus('connection:set', 'git');
 
     // Deployment
     $this->deploy();
 
     // Trigger remote install.
     if ($opts['install']) {
-      $this->_exec('terminus site wipe --yes');
+      $this->terminus('env:wipe', '--yes');
       return $this->pantheonInstall();
     }
   }
@@ -344,7 +345,7 @@ class Tasks extends \Robo\Tasks
   function pantheonInstall($opts = ['plugins' => NULL]) {
 
     // Get the current branch using the simple exec command.
-    $command = 'terminus site hostnames list | awk \'{if (NR!=1) print $1}\'';
+    $command = 'terminus domain:list ' . $this->projectProperties['terminus_site_env_id'] . '--field=domain';
     $process = new Process($command);
     $process->setTimeout(NULL);
 //    $process->setWorkingDirectory($properties['working_dir']);
@@ -353,30 +354,26 @@ class Tasks extends \Robo\Tasks
     $url = trim($process->getOutput());
 
     // Wipe the existing site.
-    $this->taskExec('terminus site wipe')
-      ->option('yes')
-      ->run();
+    $this->terminus('env:wipe', '--yes');
 
     // Generate a "random" password.
     $password = bin2hex(random_bytes(10));
 
-    $install_cmd = 'terminus wp \'core install --url="' . $url . '"' .
+    $install_cmd = '-- core install --url="' . $url . '"' .
                    ' --title="' . $this->projectProperties['project'] . '"' .
                    ' --admin_user="' . $this->projectProperties['project'] . '_admin"' .
                    ' --admin_user="' . $this->projectProperties['project'] . '_admin"' .
                    ' --admin_password="' . $password . '"' .
                    ' --admin_email="dev-team+' . $this->projectProperties['project'] . '@thinkshout.com"' .
-                   ' --skip-email' .
-                   '\'';
+                   ' --skip-email';
     // Run the installation.
-    $result = $this->taskExec($install_cmd)
-                   ->run();
+    $result = $this->terminus('wp', $install_cmd);
 
     if ($result->wasSuccessful()) {
       if ($opts['plugins']) {
-        $this->taskExec( 'terminus wp \'plugin activate ' . implode(' ', $opts['plugins']) . '\'' )->run();
+        $this->terminus('wp', 'plugin activate ' . implode(' ', $opts['plugins']));
       }
-      $this->taskExec('terminus wp \'config pull all\'')->run();
+      $this->terminus('wp', 'config pull all');
       $this->say('Install complete');
       $this->say('Admin: ' . $this->projectProperties['project'] . '_admin');
       $this->say('Password: ' . $password);
@@ -412,9 +409,21 @@ class Tasks extends \Robo\Tasks
     return $this->test(['profile' => 'pantheon', 'feature' => $opts['feature']]);
   }
 
+  /**
+   * Run a terminus command using the configures site and environment.
+   *
+   * @param string $cmd
+   * @param null $args
+   */
+  function terminus($cmd = '', $args = null) {
+    $terminus_command = 'terminus ' . $cmd . ' ' . $this->projectProperties['terminus_site_env_id'] . ' ' . $args;
+    $cmd = $this->taskExec($terminus_command);
+    return $cmd->run();
+  }
+
   protected function getProjectProperties() {
 
-    $properties = ['project' => '', 'host_repo' => '', 'url' => '', 'terminus_env' => ''];
+    $properties = ['project' => '', 'host_repo' => '', 'url' => '', 'terminus_env' => '', 'terminus_site' => ''];
 
     $properties['working_dir'] = getcwd();
 
@@ -459,6 +468,9 @@ class Tasks extends \Robo\Tasks
     else {
       $properties['db-name'] = $properties['project'] . '_' . $properties['branch'];
     }
+
+    // Combine terminus site and env for Terminus 1.0 commands.
+    $properties['terminus_site_env_id'] = $properties['terminus_site'] . '.' . $properties['terminus_env'];
 
     return $properties;
   }
