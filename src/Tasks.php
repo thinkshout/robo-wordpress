@@ -198,11 +198,16 @@ class Tasks extends \Robo\Tasks
   }
 
   /**
-   * Install or re-install the Drupal site.
+   * Install or re-install the Wordpress site.
+   *
+   * @arg array opts function options:
+   *
+   * @option array plugins Plugins to enable before config is imported.
+
    *
    * @return \Robo\Result
    */
-  function install() {
+  function install($opts = ['plugins' => NULL]) {
 
     // Install dependencies. Only works locally.
     $this->taskComposerInstall()
@@ -225,6 +230,9 @@ class Tasks extends \Robo\Tasks
       ->run();
 
     if ($result->wasSuccessful()) {
+      if ($opts['plugins']) {
+          $this->taskExec( 'wp plugin activate ' . implode(' ', $opts['plugins']) )->run();
+      }
       $this->taskExec('wp config pull all')->run();
       $this->say('Install complete');
       $this->say('Admin: ' . $this->projectProperties['project'] . '_admin');
