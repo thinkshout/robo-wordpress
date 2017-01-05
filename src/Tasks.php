@@ -213,6 +213,9 @@ class Tasks extends \Robo\Tasks
       ->optimizeAutoloader()
       ->run();
 
+    // Remove uploads directory.
+    $this->_cleanDir('web/app/uploads');
+
     // Wipe the DB.
     $this->_exec('wp db reset --yes');
 
