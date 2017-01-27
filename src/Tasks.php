@@ -238,6 +238,7 @@ class Tasks extends \Robo\Tasks
           $this->taskExec( 'wp plugin activate ' . implode(' ', $opts['plugins']) )->run();
       }
       $this->taskExec('wp config pull all')->run();
+      $this->taskExec('wp rewrite flush --hard')->run();
       $this->say('Install complete');
       $this->say('Admin: ' . $this->projectProperties['project'] . '_admin');
       $this->say('Password: ' . $password);
