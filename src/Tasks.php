@@ -223,7 +223,7 @@ class Tasks extends \Robo\Tasks
     }
 
     // Wipe the DB.
-    $this->_exec('wp db reset --yes --allow-root);
+    $this->_exec('wp db reset --yes --allow-root');
 
     $password = bin2hex(random_bytes(10));
 
