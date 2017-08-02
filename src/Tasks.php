@@ -83,7 +83,6 @@ class Tasks extends \Robo\Tasks
 
     // Initialize the .env file
     $this->taskExec('wp dotenv init')
-      ->option('allow-root')
       ->option('with-salts')
       ->option('template=.env.example')
       ->option('force')
@@ -100,7 +99,6 @@ class Tasks extends \Robo\Tasks
         $this->say("Test: ". strtoupper(str_replace('-', '_', $opt)));
         $this->projectProperties[$opt] = $opts[$opt];
         $this->taskExec('wp dotenv set')
-          ->option('allow-root')
           ->args([strtoupper(str_replace('-', '_', $opt)), $opts[$opt]])
           ->run();
       }
@@ -112,13 +110,11 @@ class Tasks extends \Robo\Tasks
     // Terminus env
     $this->projectProperties['terminus_env'] = ($branch == 'master') ? 'dev' : $branch;
     $this->taskExec('wp dotenv set')
-      ->option('allow-root')
       ->args(['TERMINUS_ENV', $this->projectProperties['terminus_env']])
       ->run();
 
     // If branch was specified, write it out to the .env file for future runs.
     $this->taskExec('wp dotenv set')
-      ->option('allow-root')
       ->args(['BRANCH',  $branch])
       ->run();
   }
@@ -223,13 +219,12 @@ class Tasks extends \Robo\Tasks
     }
 
     // Wipe the DB.
-    $this->_exec('wp db reset --yes --allow-root');
+    $this->_exec('wp db reset --yes');
 
     $password = bin2hex(random_bytes(10));
 
     // Run the installation.
     $result = $this->taskExec('wp core install')
-      ->option('allow-root')
       ->option('url="' . $this->projectProperties['url'] . '"')
       ->option('title="' . $this->projectProperties['project'] . '"')
       ->option('admin_user="' . $this->projectProperties['project'] . '_admin"')
@@ -241,14 +236,11 @@ class Tasks extends \Robo\Tasks
     if ($result->wasSuccessful()) {
       if ($opts['plugins']) {
           $this->taskExec( 'wp plugin activate ' . implode(' ', $opts['plugins']) )
-          ->option('allow-root')
           ->run();
       }
       $this->taskExec('wp config pull all')
-          ->option('allow-root')
           ->run();
       $this->taskExec('wp rewrite flush --hard')
-          ->option('allow-root')
           ->run();
       $this->say('Install complete');
       $this->say('Admin: ' . $this->projectProperties['project'] . '_admin');
