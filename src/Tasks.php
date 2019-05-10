@@ -316,8 +316,8 @@ class Tasks extends \Robo\Tasks
    *
    * @return \Robo\Result
    */
-  function pantheonDeploy($opts = ['install' => FALSE, 'y' => FALSE]) {
-    $terminus_env = $this->projectProperties['terminus_env'];
+  function pantheonDeploy($opts = ['install' => FALSE, 'y' => FALSE, 'pantheon-branch' => NULL]) {
+    $terminus_env      = $opts['pantheon-branch'] ? $opts['pantheon-branch'] : $this->projectProperties['terminus_env'];
     $result = $this->terminus('env:info');
 
     // Check for existing multidev and prompt to create.
@@ -339,7 +339,8 @@ class Tasks extends \Robo\Tasks
     $this->terminus('connection:set', 'git');
 
     // Deployment
-    $this->deploy();
+    $pantheon_branch = $terminus_env == 'dev' ? 'master' : $terminus_env;
+    $this->deploy($pantheon_branch);
 
     // Trigger remote install.
     if ($opts['install']) {
