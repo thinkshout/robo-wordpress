@@ -121,12 +121,18 @@ class Tasks extends \Robo\Tasks
 
   /**
    * Perform git checkout of host files.
+   *
+   * @param $pantheon_branch This enables us to define the target branch name.
+   * We use this to deploy code to a specific multidev for Pantheon deployments
+   * which we need for automated visual regression testing. In that case, the
+   * source (feature) branch gets deployed to the vr-dev branch/multidev.
    */
-  function deploy() {
+  function deploy($pantheon_branch = NULL) {
 
     $repo = $this->projectProperties['host_repo'];
 
     $branch = $this->projectProperties['branch'];
+    if (!is_null($pantheon_branch)) {$branch = $pantheon_branch;}
 
     $webroot = $this->projectProperties['web_root'];
 
