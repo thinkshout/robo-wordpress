@@ -212,7 +212,9 @@ class Tasks extends \Robo\Tasks
    *
    * @return \Robo\Result
    */
-  function install($opts = ['plugins' => NULL]) {
+  function install() { //$opts = ['plugins' => NULL]) {
+
+    $opts = ['plugins' => NULL];
 
     // Install dependencies. Only works locally.
     $this->taskComposerInstall()
