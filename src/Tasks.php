@@ -60,7 +60,7 @@ class Tasks extends \Robo\Tasks
 
   /**
    * Generate configuration in your .env file.
-   * 
+   *
    */
   function configure($opts = [
     'db-password' => NULL,
@@ -200,7 +200,7 @@ class Tasks extends \Robo\Tasks
    *
    * @return \Robo\Result
    */
-  function install() { //$opts = ['plugins' => NULL]) {
+  function install($opts = ['plugins' => NULL]) {
 
     $opts = ['plugins' => NULL];
 
