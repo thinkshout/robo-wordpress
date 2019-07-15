@@ -61,6 +61,14 @@ class Tasks extends \Robo\Tasks
   /**
    * Generate configuration in your .env file.
    *
+   * @arg array opts function options:
+   *
+   * @option string db-password Database password.
+   * @option string db-user Database user.
+   * @option string db-name Database name.
+   * @option string db-host Database host.
+   * @option string branch Branch.
+   * @option string url Base URL for the Wordpress site.
    */
   function configure($opts = [
     'db-password' => NULL,
@@ -198,11 +206,13 @@ class Tasks extends \Robo\Tasks
   /**
    * Install or re-install the Wordpress site.
    *
+   * @arg array opts function options:
+   *
+   * @option array plugins Plugins to enable before config is imported.
+   *
    * @return \Robo\Result
    */
   function install($opts = ['plugins' => NULL]) {
-
-    $opts = ['plugins' => NULL];
 
     // Install dependencies. Only works locally.
     $this->taskComposerInstall()
