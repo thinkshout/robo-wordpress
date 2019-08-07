@@ -204,8 +204,6 @@ class Tasks extends \Robo\Tasks
   /**
    * Install or re-install the Wordpress site.
    *
-   * @option array plugins Plugins to enable before config is imported.
-   *
    * @return \Robo\Result
    */
   function install($opts = ['plugins' => NULL]) {
