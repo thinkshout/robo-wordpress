@@ -339,8 +339,6 @@ class Tasks extends \Robo\Tasks
   /**
    * Install site on Pantheon.
    *
-   * @option array plugins Plugins to enable before config is imported.
-   *
    * @return \Robo\Result
    */
   function pantheonInstall($opts = ['plugins' => NULL]) {
