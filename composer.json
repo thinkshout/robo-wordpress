@@ -17,11 +17,11 @@
         }
     },
     "require": {
-        "aaemnnosttv/wp-cli-dotenv-command": "^1.0",
+        "aaemnnosttv/wp-cli-dotenv-command": "^2.0",
         "vlucas/phpdotenv": "^2.2",
-        "consolidation/robo": "1.4.2",
-        "consolidation/annotated-command": "^2.12",
-        "consolidation/output-formatters": "^3.4",
+        "consolidation/robo": "^2.0",
+        "consolidation/annotated-command": "^4.0",
+        "consolidation/output-formatters": "^4.0",
         "grasmash/yaml-expander": "^1.3",
         "squizlabs/php_codesniffer": "^2.9"
     }
