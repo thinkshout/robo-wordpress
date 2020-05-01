@@ -17,7 +17,7 @@
         }
     },
     "require": {
-        "aaemnnosttv/wp-cli-dotenv-command": "^2.0",
+        "aaemnnosttv/wp-cli-dotenv-command": "~1.0",
         "vlucas/phpdotenv": "^2.2",
         "consolidation/robo": "^2.0",
         "consolidation/annotated-command": "^4.0",
