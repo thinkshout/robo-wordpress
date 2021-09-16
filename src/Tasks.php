@@ -450,7 +450,7 @@ class Tasks extends \Robo\Tasks
 
     if (!isset($properties['branch'])) {
       // Get the current branch using the simple exec command.
-      $command = 'git symbolic-ref --short -q HEAD';
+      $command = ['git', 'symbolic-ref', '--short', '-q HEAD'];
       $process = new Process($command);
       $process->setTimeout(NULL);
       $process->setWorkingDirectory($properties['working_dir']);
