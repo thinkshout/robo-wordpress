@@ -61,8 +61,6 @@ class Tasks extends \Robo\Tasks
   /**
    * Generate configuration in your .env file.
    *
-   * @arg array opts function options:
-   *
    * @option string db-password Database password.
    * @option string db-user Database user.
    * @option string db-name Database name.
@@ -199,10 +197,6 @@ class Tasks extends \Robo\Tasks
 
   /**
    * Install or re-install the Wordpress site.
-   *
-   * @arg array opts function options:
-   *
-   * @option array plugins Plugins to enable before config is imported.
    *
    * @return \Robo\Result
    */
@@ -344,10 +338,6 @@ class Tasks extends \Robo\Tasks
 
   /**
    * Install site on Pantheon.
-   *
-   * @arg array opts function options:
-   *
-   * @option array plugins Plugins to enable before config is imported.
    *
    * @return \Robo\Result
    */
